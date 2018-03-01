@@ -53,6 +53,7 @@ public class DynSOAPConnector {
 	 * @param host Server host (ex: "subdomain.domain.com")
 	 * @param authUID API Auth ID
 	 * @param masterToken API Master Token
+	 * @param sessionTokenCallback Session token callback class (DynSOAPConnector.Callback)
 	 */
 	public DynSOAPConnector(String host, String authUID, String masterToken, Callback sessionTokenCallback) {
 		this.debug = false;

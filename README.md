@@ -22,4 +22,4 @@ For **Operation** and related parameters please refer to [PigrecoOS](http://www.
 
 ---
 
-Copyright 2018 [Modulo srl](http://www.modulo.srl) - Licensed under the Apache license*
+*Copyright 2018 [Modulo srl](http://www.modulo.srl) - Licensed under the Apache license*

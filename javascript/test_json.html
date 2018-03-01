@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+		<script src="dyn-connector.js"></script>
+	</head>
+
+	<body>
+		<h1>dyn-connector Ajax test</h1>
+
+		<div id="log1"></div>
+		<pre id="log2"></pre>
+
+		<script>
+			$('#log1').html('Send request to server...');
+
+			var domain = 'pigrecoos.it';
+			var operation = 'echo';
+
+			var data_to_send = {
+				test: {
+					var1: 1,
+					var2: true,
+					var3: "this is a test"
+				}
+			};
+
+			dyn_send(domain, operation, data_to_send,
+				function(response) {
+					console.log('Response: ', response);
+
+					$('#log2').html("Server response: \n" + JSON.stringify(response, null, "\t"));
+				}
+			);
+		</script>
+
+	</body>
+</html>
