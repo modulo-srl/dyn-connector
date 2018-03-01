@@ -240,23 +240,31 @@ class DynResponse {
 
 			} else {
 				this.xmlResponse = response;
-				String firstLine = response.substring(0, response.indexOf("\n")).trim();
+				int pos = response.indexOf(">");
+				if (pos > 0) {
+					System.out.println(response);
+					String firstTag = response.substring(0, pos).trim().substring(1);
 
-				if (firstLine.equals("<error>")) {
-					String errCodeStr = DynXMLUtils.getXMLNodeContent(response, "code");
+					if (firstTag.equals("error")) {
+						String errCodeStr = DynXMLUtils.getXMLNodeContent(response, "code");
 
-					if (errCodeStr.length() > 0) {
-						this.errorCode = Integer.parseInt(errCodeStr);
-						this.errorReason = DynXMLUtils.getXMLNodeContent(response, "reason");
+						if (errCodeStr.length() > 0) {
+							this.errorCode = Integer.parseInt(errCodeStr);
+							this.errorReason = DynXMLUtils.getXMLNodeContent(response, "reason");
+						} else {
+							this.errorCode = -1;
+							this.errorReason = "malformed response";
+						}
+
 					} else {
-						this.errorCode = -1;
-						this.errorReason = "malformed response";
+						// Valid response
+						this.errorCode = 0;
+						this.errorReason = "";
 					}
 
 				} else {
-					// Valid response
-					this.errorCode = 0;
-					this.errorReason = "";
+					this.errorCode = -1;
+					this.errorReason = "malformed response";
 				}
 			}
 		}
