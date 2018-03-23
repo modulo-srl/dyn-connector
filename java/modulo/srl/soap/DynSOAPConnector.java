@@ -236,7 +236,7 @@ class DynResponse {
 			if (response.length() == 0) {
 				this.xmlResponse = xmlResponse;
 				this.errorCode = -1;
-				this.errorReason = "malformed response";
+				this.errorReason = "malformed response (Response node not found)";
 
 			} else {
 				this.xmlResponse = response;
@@ -253,7 +253,7 @@ class DynResponse {
 							this.errorReason = DynXMLUtils.getXMLNodeContent(response, "reason");
 						} else {
 							this.errorCode = -1;
-							this.errorReason = "malformed response";
+							this.errorReason = "malformed response (error without reason)";
 						}
 
 					} else {
@@ -264,7 +264,7 @@ class DynResponse {
 
 				} else {
 					this.errorCode = -1;
-					this.errorReason = "malformed response";
+					this.errorReason = "malformed response (invalid XML)";
 				}
 			}
 		}
