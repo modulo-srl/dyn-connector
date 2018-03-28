@@ -7,7 +7,12 @@ import java.nio.file.StandardOpenOption;
 
 
 /**
- * Connector session callback
+ * Connector session callback implementation example.
+ *
+ * NOTE: YOU SHOULD ASSURE TO LOAD/SAVE THE TOKEN
+ * USING PERSISTENT STORAGE (disk file, Database, cache system...),
+ * HANDLING ANY EXCEPTIONS.
+ *
  */
 class dynConnectorCallback implements DynSOAPConnector.Callback {
 	private String sessionToken = null;
@@ -21,7 +26,7 @@ class dynConnectorCallback implements DynSOAPConnector.Callback {
 
 		this.sessionToken = sessionToken;
 
-		// Write to disk or database
+		// The token must to be written to disk or database
 		final String filePath = "../DynSession.txt";
 		try {
 			Files.write(Paths.get(filePath), this.sessionToken.getBytes(), StandardOpenOption.CREATE_NEW);
@@ -34,7 +39,7 @@ class dynConnectorCallback implements DynSOAPConnector.Callback {
 	 */
 	public String getSessionToken() {
 		if (this.sessionToken == null) {
-			// Load from disk or database
+			// The token must to be loaded from disk or database
 			final String filePath = "../DynSession.txt";
 			try {
 				this.sessionToken = new String(Files.readAllBytes(Paths.get(filePath)));
