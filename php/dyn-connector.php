@@ -3,7 +3,7 @@
 /**
  * Simple class for sending POST-JSON requests to a Dyn server
  *
- * @version 1.1
+ * @version 1.11
  * @author Modulo srl
  */
 class dyn_connector {
@@ -18,6 +18,7 @@ class dyn_connector {
 	private $session_token;
 	private $debug;
 	private $custom_http_header;
+	private $protocol_by_host;
 
 
 	/** dyn_connector constructor.
@@ -29,7 +30,7 @@ class dyn_connector {
 	 * @param array|string|null $set_sessiontoken_callback Function name or array(class, method_name)
 	 */
 	public function __construct($host, $auth_UID, $master_token,
-										 $get_sessiontoken_callback, $set_sessiontoken_callback) {
+								$get_sessiontoken_callback, $set_sessiontoken_callback) {
 		$this->host = $host;
 		$this->auth_UID = $auth_UID;
 		$this->master_token = $master_token;
@@ -45,10 +46,12 @@ class dyn_connector {
 	 *
 	 * @param bool $debug_mode Enable or disable debugging
 	 * @param string|array|null $custom_http_header String(s) contains raw header(s) to pass to every HTTP call
+	 * @param bool $protocol_by_host When True the host passed to send_request() will contain protocol (http:// or https://)
 	 */
-	public function set_debug($debug_mode = true, $custom_http_header = null) {
+	public function set_debug($debug_mode = true, $custom_http_header = null, $protocol_by_host = false) {
 		$this->debug = $debug_mode;
 		$this->custom_http_header = $custom_http_header;
+		$this->protocol_by_host = $protocol_by_host;
 	}
 
 	/** Send request
@@ -123,7 +126,12 @@ class dyn_connector {
 	 * @return array
 	 */
 	private function send_request($operation, $data) {
-		$url = 'https://'.$this->host.'/api/'.$operation;
+		if ($this->protocol_by_host)
+			$url = '';
+		else
+			$url = 'https://';
+
+		$url .= $this->host.'/api/'.$operation;
 
 		if (!$data)
 			$data = array();
