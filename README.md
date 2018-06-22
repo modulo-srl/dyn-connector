@@ -3,7 +3,7 @@ Libraries for M2M communication to Dyn/PigrecoOS
 
 ## Features
 * Supported languages: Java, PHP, Javascript, Bash
-* Protocols: SOAP, XML (RESTful), JSON, HTTP POST
+* Protocols and formats: SOAP, RESTful, HTTP POST; XML, JSON, TXT
 * Stateless and stateful modes
 * Transparent Auth and tokens expiration management
  
