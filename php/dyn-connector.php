@@ -111,7 +111,7 @@ class dyn_connector {
 			$this->session_token = $response_data['session_token'];
 
 			if (is_callable($this->set_sessiontoken_callback))
-				$this->session_token = call_user_func($this->set_sessiontoken_callback, $this->session_token);
+				call_user_func($this->set_sessiontoken_callback, $this->session_token);
 			return true;
 		}
 
