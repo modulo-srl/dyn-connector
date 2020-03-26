@@ -2,8 +2,8 @@
 Libraries for M2M communication to Dyn/PigrecoOS
 
 ## Features
-* Supported languages: Java, PHP, Javascript, Bash
-* Protocols and formats: SOAP, RESTful, HTTP POST; XML, JSON, TXT
+* Supported languages: Java, Go, PHP, Javascript, Bash
+* Protocols and formats: SOAP, RESTful, HTTP POST, XML, JSON, TXT
 * Stateless and stateful modes
 * Transparent Auth and tokens expiration management
  
@@ -12,7 +12,7 @@ All modules are developed using native libraries. You should simply include one 
 
 `test/` directory contains simple examples of use that can be quickly copy-pasted.
 
-`modulo/` (Java), `modulo.libs/` (PHP, Bash) contains libraries that should be included as is.
+`modulo/` (Java) contains libraries that should be included as is.
 
 **Master Token** and **Auth UID** are authorization constants that could be obtained from [PigrecoOS](http://www.pigrecoos.it) services.
 
@@ -22,4 +22,4 @@ For **Operation** and related parameters please refer to [PigrecoOS](http://www.
 
 ---
 
-*Copyright 2018 [Modulo srl](http://www.modulo.srl) - Licensed under the Apache license*
+*Copyright 2020 [Modulo srl](http://www.modulo.srl) - Licensed under the Apache license*
