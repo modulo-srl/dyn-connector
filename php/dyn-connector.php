@@ -45,7 +45,7 @@ class dyn_connector {
 	/** Enable or disable debugging output
 	 *
 	 * @param bool $debug_mode Enable or disable debugging
-	 * @param string|array|null $custom_http_header String(s) contains raw header(s) to pass to every HTTP call
+	 * @param array|null $custom_http_header String(s) contains raw header(s) to pass to every HTTP call
 	 * @param bool $protocol_by_host When True the host passed to send_request() will contain protocol (http:// or https://)
 	 */
 	public function set_debug($debug_mode = true, $custom_http_header = null, $protocol_by_host = false) {
@@ -136,12 +136,19 @@ class dyn_connector {
 		if (!$data)
 			$data = array();
 
+		$headers = $this->custom_http_header;
+
 		if ($operation !== 'auth') {
-			if ($this->session_token)
-				$data['session_token'] = $this->session_token;
+			if ($this->session_token) {
+				//$data['session_token'] = $this->session_token;
+
+				if (!$headers)
+					$headers = [];
+				$headers[] = 'Session-Token: '.$this->session_token;
+			}
 		}
 
-		$result = $this->get_content($url, $data, $this->custom_http_header, $error_message);
+		$result = $this->get_content($url, $data, $headers, $error_message);
 
 		if (!$result) {
 			if (!$error_message)
@@ -164,7 +171,7 @@ class dyn_connector {
 	 *
 	 * @param string $remote_url
 	 * @param array|null $post_data
-	 * @param string|array|null $custom_header Custom header to add (string or array of lines)
+	 * @param string|array|null $custom_header Custom header to add (array of strings)
 	 * @param string $error_message if set, store errors in this variable
 	 * @param int|null $timeout_secs (optional, default 60 seconds by default)
 	 * @return array|false
