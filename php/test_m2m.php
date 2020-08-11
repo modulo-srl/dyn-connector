@@ -36,7 +36,7 @@ class test {
 	public function main() {
 		$domain = 'pigrecoos.it';
 		$auth_uid = 'test';
-		$master_token = 'test';
+		$master_token = 'cafecafe-7177-407d-965d-e71af1892847';
 
 		$connector = new dyn_connector($domain, $auth_uid, $master_token,
 			array($this, 'get_session_token'), array($this, 'set_session_token')
@@ -53,7 +53,8 @@ class test {
 			)
 		);
 
-		$result = $connector->send('echo', $data);
+		$result = $connector->send('auth/test/echo', $data);
+		$result = $connector->send('test/echo', $data);
 
 		echo "Server response: \n";
 		print_r($result);

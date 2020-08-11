@@ -55,12 +55,13 @@ class dynConnectorCallback implements DynSOAPConnector.Callback {
 public class TestSOAP {
 
 	public static void main(String[] args) {
-		DynSOAPConnector soap = new DynSOAPConnector("pigrecoos.it", "test", "test", new dynConnectorCallback());
+		DynSOAPConnector soap = new DynSOAPConnector("pigrecoos.it", "test", "cafecafe-7177-407d-965d-e71af1892847", new dynConnectorCallback());
 
 		// Enable debugging output (please disable in production)
 		//soap.setDebug(true, true);
 
-		String response = soap.send("echo", "<test><data>this is a test</data></test>");
+		String response = soap.send("test/echo", "<test><data>this is a test</data></test>");
+		//String response = soap.send("auth/test/echo", "<test><data>this is a test</data></test>");
 
 		System.out.println("Server response: "+response);
 	}
