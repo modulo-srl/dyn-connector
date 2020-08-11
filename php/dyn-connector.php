@@ -3,7 +3,7 @@
 /**
  * Simple class for sending POST-JSON requests to a Dyn server
  *
- * @version 1.11
+ * @version 1.2
  * @author Modulo srl
  */
 class dyn_connector {
@@ -18,7 +18,6 @@ class dyn_connector {
 	private $session_token;
 	private $debug;
 	private $custom_http_header;
-	private $protocol_by_host;
 
 
 	/** dyn_connector constructor.
@@ -30,8 +29,11 @@ class dyn_connector {
 	 * @param array|string|null $set_sessiontoken_callback Function name or array(class, method_name)
 	 */
 	public function __construct($host, $auth_UID, $master_token,
-								$get_sessiontoken_callback, $set_sessiontoken_callback) {
+										 $get_sessiontoken_callback, $set_sessiontoken_callback) {
+		if (substr($host, 0, 4) != 'http')
+			$host = 'https://'.$host;
 		$this->host = $host;
+
 		$this->auth_UID = $auth_UID;
 		$this->master_token = $master_token;
 
@@ -46,19 +48,17 @@ class dyn_connector {
 	 *
 	 * @param bool $debug_mode Enable or disable debugging
 	 * @param array|null $custom_http_header String(s) contains raw header(s) to pass to every HTTP call
-	 * @param bool $protocol_by_host When True the host passed to send_request() will contain protocol (http:// or https://)
 	 */
-	public function set_debug($debug_mode = true, $custom_http_header = null, $protocol_by_host = false) {
+	public function set_debug($debug_mode = true, $custom_http_header = null) {
 		$this->debug = $debug_mode;
 		$this->custom_http_header = $custom_http_header;
-		$this->protocol_by_host = $protocol_by_host;
 	}
 
 	/** Send request
 	 *
 	 * @param string $operation Operation to perform
-	 * @param array|null $data Array of data to send to server
-	 * @return array Server (or internal) response
+	 * @param mixed|null $data Data to send to server
+	 * @return mixed|false Server (or internal) response
 	 */
 	public function send($operation, $data) {
 		if ($this->debug)
@@ -66,8 +66,8 @@ class dyn_connector {
 
 		$response = $this->send_request($operation, $data);
 
-		if (isset($response['error'])) {
-			$code = $response['error']['code'];
+		if (isset($response->error)) {
+			$code = $response->error->code;
 
 			if ($code == 70) {
 				// Authentication needed, try to login
@@ -107,8 +107,8 @@ class dyn_connector {
 
 		$response_data = $this->send_request('auth', $data);
 
-		if (!empty($response_data['auth'])) {
-			$this->session_token = $response_data['session_token'];
+		if (!empty($response_data->auth)) {
+			$this->session_token = $response_data->session_token;
 
 			if (is_callable($this->set_sessiontoken_callback))
 				call_user_func($this->set_sessiontoken_callback, $this->session_token);
@@ -123,18 +123,10 @@ class dyn_connector {
 	 *
 	 * @param string $operation
 	 * @param array|null $data
-	 * @return array
+	 * @return object
 	 */
 	private function send_request($operation, $data) {
-		if ($this->protocol_by_host)
-			$url = '';
-		else
-			$url = 'https://';
-
-		$url .= $this->host.'/api/'.$operation;
-
-		if (!$data)
-			$data = array();
+		$url = $this->host.'/api/'.$operation;
 
 		$headers = $this->custom_http_header;
 
@@ -154,12 +146,12 @@ class dyn_connector {
 			if (!$error_message)
 				$error_message = 'unknown error';
 
-			$result = array(
-				'error' => array(
+			$result = (object)[
+				'error' => (object)[
 					'code' => -1,
 					'reason' => $error_message
-				)
-			);
+				]
+			];
 		}
 
 		return $result;
@@ -174,22 +166,18 @@ class dyn_connector {
 	 * @param string|array|null $custom_header Custom header to add (array of strings)
 	 * @param string $error_message if set, store errors in this variable
 	 * @param int|null $timeout_secs (optional, default 60 seconds by default)
-	 * @return array|false
+	 * @return object|false
 	 */
 	private function get_content($remote_url, $post_data = null, $custom_header = null, &$error_message = null, $timeout_secs = null){
-
-		$header = "Connection: close\r\n";
+		$header = '';
+		//$header = "Connection: close\r\n";
+		$header .= "Content-Type: application/json\r\n";
 
 		if (empty($post_data)){
 			$post_data = array();
 		}
 
 		$json_post = json_encode($post_data);
-
-		//$header .= "Content-Type: application/x-www-form-urlencoded\r\n";
-		//$header .= "Content-Type: multipart/form-data\r\n";
-
-		$header .= "Content-Length: ".strlen($json_post)."\r\n";
 
 		if ($custom_header){
 			// add custom header
@@ -203,56 +191,82 @@ class dyn_connector {
 		$context_arr = array(
 			'http' => array(
 				'method' => "POST",
+				'protocol_version' => 1.1,
+				'ignore_errors' => true,
 				'header' => $header,
 				'content' => $json_post
 			)
 		);
 
-		if ($timeout_secs)
+		// Set timeout
+		if ($timeout_secs) {
 			$context_arr['http']['timeout'] = $timeout_secs;
 
-		$context = stream_context_create($context_arr);
-
-		$old_socket_timeout = ini_get('default_socket_timeout');
-		if ($timeout_secs) {
+			$old_socket_timeout = ini_get('default_socket_timeout');
 			ini_set('default_socket_timeout', $timeout_secs);
-			set_time_limit($timeout_secs * 2);
-		} else {
-			set_time_limit(60);  // 60 seconds timeout
+		}
+		set_time_limit(60*30);  // 30 minutes timeout
+
+		// Make the call
+		$error_message = null;
+		$content = null;
+		try {
+			$context = stream_context_create($context_arr);
+			$content = @file_get_contents($remote_url, false, $context);
+		} catch (\Exception $e) {
+			$error_message = $e->getMessage();
 		}
 
-		$content = @file_get_contents($remote_url, false, $context);
-
-		ini_set('default_socket_timeout', $old_socket_timeout);
-
-		if ($content === false){
+		if ((($content === "") || ($content === false)) && !$error_message) {
 			$errors = error_get_last();
-			if (empty($errors))
-				$error_message = 'general connection error';
-			else
+			if ($errors) {
 				$error_message = $errors['type'].': '.$errors['message'];
+			} else {
+				if (!empty($http_response_header)) {
+					$code = self::get_http_return_code($http_response_header, $text);
+					if ($code >= 400)
+						$error_message = $code.' '.$text;
+				}
+
+				if (!$error_message && ($content === false))  // unknown error internal to file_get_contents()
+					$error_message = 'general connection error';
+			}
 		}
 
-		if ($content) {
-			$decoded = json_decode($content, true);
-			if (!$decoded)
-				$decoded = array(
-					'error' => array(
-						'code' => -1,
-						'reason' => 'malformed response'
-					)
-				);
-		}else{
-			$decoded = array(
-				'error' => array(
-					'code' => -1,
-					'reason' => 'empty response'
-				)
-			);
+		// Restore timeouts
+		if ($timeout_secs)
+			ini_set('default_socket_timeout', $old_socket_timeout);
 
+		if ($error_message || !strlen($content))
+			return false;
+
+		$out = json_decode($content);
+		if ($out === null) {
+			if ($content === '')
+				$error_message = 'empty response';
+			else
+				$error_message = 'malformed response';
+
+			return false;
 		}
 
-		return $decoded;
+		return $out;
 	}
+
+	static private function get_http_return_code($http_response_header, &$text = null) {
+		$text = null;
+
+		if (is_array($http_response_header) && count($http_response_header)) {
+			$parts = explode(' ',$http_response_header[0]);
+
+			if (count($parts)) { //HTTP/1.X <code> <text>
+				$text = implode(' ', array_slice($parts, 2));
+				return intval($parts[1]); // Get code
+			}
+		}
+
+		return 0;
+	}
+
 
 }
