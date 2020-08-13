@@ -3,7 +3,7 @@
 /**
  * Simple class for sending POST-JSON requests to a Dyn server
  *
- * @version 1.2
+ * @version 1.3
  * @author Modulo srl
  */
 class dyn_connector {
@@ -47,7 +47,7 @@ class dyn_connector {
 	/** Enable or disable debugging output
 	 *
 	 * @param bool $debug_mode Enable or disable debugging
-	 * @param array|null $custom_http_header String(s) contains raw header(s) to pass to every HTTP call
+	 * @param array|null $custom_http_header String(s) contains a custom header to pass to every HTTP call
 	 */
 	public function set_debug($debug_mode = true, $custom_http_header = null) {
 		$this->debug = $debug_mode;
@@ -163,7 +163,7 @@ class dyn_connector {
 	 *
 	 * @param string $remote_url
 	 * @param array|null $post_data
-	 * @param string|array|null $custom_header Custom header to add (array of strings)
+	 * @param array|null $custom_header Custom header to add (array of strings)
 	 * @param string $error_message if set, store errors in this variable
 	 * @param int|null $timeout_secs (optional, default 60 seconds by default)
 	 * @return object|false
@@ -181,11 +181,11 @@ class dyn_connector {
 
 		if ($custom_header){
 			// add custom header
-			if (is_array($custom_header)){
-				foreach ($custom_header as $s)
-					$header .= trim((string)$s)."\r\n";
-			}else
-				$header .= trim((string)$custom_header)."\r\n";
+			foreach ($custom_header as $s) {
+				$s = trim((string)$s);
+				if ($s)
+					$header .= $s."\r\n";
+			}
 		}
 
 		$context_arr = array(
