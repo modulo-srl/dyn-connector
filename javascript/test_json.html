@@ -14,10 +14,10 @@
 		<pre id="log2"></pre>
 
 		<script>
-			$('#log1').html('Send request to server...');
-
 			var domain = 'pigrecoos.it';
 			var operation = 'test/echo';
+
+			$('#log1').html('Send request to server ' + domain +' ...');
 
 			var data_to_send = {
 				test: {

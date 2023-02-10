@@ -1,7 +1,8 @@
 /**
- * Simple function to send Ajax requests to a Dyn server
+ * Simple function to send Ajax requests to a Dyn server.
+ * Authenticated requests are not supported.
  *
- * @version 1.1
+ * @version 1.2
  * @author Modulo srl
  */
 

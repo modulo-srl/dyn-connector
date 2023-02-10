@@ -1,21 +1,25 @@
 <?php
 
 /**
- * Simple class for sending POST-JSON requests to a Dyn server
+ * Simple class for sending POST-JSON requests to a Dyn server.
+ * OAuth2 compatible.
  *
- * @version 1.3
+ * @version 1.4
  * @author Modulo srl
  */
 class dyn_connector {
 
+	const URL_API = '/api/';
+	const URL_ACCESS_TOKEN = 'auth/token';
+
 	private $host;
-	private $auth_UID;
-	private $master_token;
+	private $client_id;
+	private $client_secret;
 
-	private $get_sessiontoken_callback;
-	private $set_sessiontoken_callback;
+	private $get_accesstoken_callback;
+	private $set_accesstoken_callback;
 
-	private $session_token;
+	private $access_token;
 	private $debug;
 	private $custom_http_header;
 
@@ -23,25 +27,25 @@ class dyn_connector {
 	/** dyn_connector constructor.
 	 *
 	 * @param string $host Domain without protocol, ex: "www.domain.com"
-	 * @param string $auth_UID Auth UID
-	 * @param string $master_token Master token
-	 * @param array|string|null $get_sessiontoken_callback Function name or array(class, method_name)
-	 * @param array|string|null $set_sessiontoken_callback Function name or array(class, method_name)
+	 * @param string|null $client_id Auth UID
+	 * @param string|null $client_secret Master token
+	 * @param array|string|null $get_accesstoken_callback Function name or array(class, method_name)
+	 * @param array|string|null $set_accesstoken_callback Function name or array(class, method_name)
 	 */
-	public function __construct($host, $auth_UID, $master_token,
-										 $get_sessiontoken_callback, $set_sessiontoken_callback) {
+	public function __construct($host, $client_id=null, $client_secret=null,
+										 $get_accesstoken_callback=null, $set_accesstoken_callback=null) {
 		if (substr($host, 0, 4) != 'http')
 			$host = 'https://'.$host;
 		$this->host = $host;
 
-		$this->auth_UID = $auth_UID;
-		$this->master_token = $master_token;
+		$this->client_id = $client_id;
+		$this->client_secret = $client_secret;
 
-		$this->get_sessiontoken_callback = $get_sessiontoken_callback;
-		$this->set_sessiontoken_callback = $set_sessiontoken_callback;
+		$this->get_accesstoken_callback = $get_accesstoken_callback;
+		$this->set_accesstoken_callback = $set_accesstoken_callback;
 
-		if (is_callable($this->get_sessiontoken_callback))
-			$this->session_token = call_user_func($this->get_sessiontoken_callback);
+		if (is_callable($this->get_accesstoken_callback))
+			$this->access_token = call_user_func($this->get_accesstoken_callback);
 	}
 
 	/** Enable or disable debugging output
@@ -67,24 +71,28 @@ class dyn_connector {
 		$response = $this->send_request($operation, $data);
 
 		if (isset($response->error)) {
-			$code = $response->error->code;
-
-			if ($code == 70) {
-				// Authentication needed, try to login
+			if ($response->error == 'unauthorized') {
+				// Authentication needed
 
 				if ($this->debug)
-					echo "[Authentication needed, try to login...]\n";
+					echo "[Authentication needed, try to get access token...]\n";
 
-				if ($this->do_auth($response)) {
+				$authorized = $this->do_auth($response);
+				if ($authorized) {
 					// Retry request
 
 					if ($this->debug)
-						echo "[Authentication done, session token \"".$this->session_token."\"]\n";
+						echo "[Authentication done, access token \"".$this->access_token."\"]\n";
 
 					if ($this->debug)
 						echo '[Resend request "'.$operation.'"]'."\n";
 					$response = $this->send_request($operation, $data);
-				}
+				}/* else {
+					if (isset($response->error) && ($response->error == 'invalid_client')) {
+						// Credenziali errate
+						return false;
+					}
+				}*/
 			}
 		}
 
@@ -101,21 +109,22 @@ class dyn_connector {
 	 */
 	private function do_auth(&$response_data = null) {
 		$data = array(
-			'uid' => $this->auth_UID,
-			'master_token' => $this->master_token
+			'grant_type' => 'client_credentials',
+			'client_id' => $this->client_id,
+			'client_secret' => $this->client_secret
 		);
 
-		$response_data = $this->send_request('auth', $data);
+		$response_data = $this->send_request(self::URL_ACCESS_TOKEN, $data);
 
-		if (!empty($response_data->auth)) {
-			$this->session_token = $response_data->session_token;
+		if (!empty($response_data->access_token)) {
+			$this->access_token = $response_data->access_token;
 
-			if (is_callable($this->set_sessiontoken_callback))
-				call_user_func($this->set_sessiontoken_callback, $this->session_token);
+			if (is_callable($this->set_accesstoken_callback))
+				call_user_func($this->set_accesstoken_callback, $this->access_token);
 			return true;
 		}
 
-		$this->session_token = null;
+		$this->access_token = null;
 		return false;
 	}
 
@@ -126,17 +135,17 @@ class dyn_connector {
 	 * @return object
 	 */
 	private function send_request($operation, $data) {
-		$url = $this->host.'/api/'.$operation;
+		$url = $this->host.self::URL_API.$operation;
 
 		$headers = $this->custom_http_header;
 
-		if ($operation !== 'auth') {
-			if ($this->session_token) {
-				//$data['session_token'] = $this->session_token;
+		if ($operation !== self::URL_ACCESS_TOKEN) {
+			if ($this->access_token) {
+				//$data['access_token'] = $this->access_token;
 
 				if (!$headers)
 					$headers = [];
-				$headers[] = 'Session-Token: '.$this->session_token;
+				$headers[] = 'authorization: Bearer '.$this->access_token;
 			}
 		}
 
@@ -147,10 +156,8 @@ class dyn_connector {
 				$error_message = 'unknown error';
 
 			$result = (object)[
-				'error' => (object)[
-					'code' => -1,
-					'reason' => $error_message
-				]
+				'error' => 'general',
+				'error_description' => $error_message
 			];
 		}
 
@@ -267,6 +274,5 @@ class dyn_connector {
 
 		return 0;
 	}
-
 
 }
