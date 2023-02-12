@@ -13,10 +13,6 @@ Libraries for M2M communication to Dyn/PigrecoOS
 
 All modules are developed using native libraries. You should simply include one of these in your project, without the need for any external dependency.
 
-`test/` directory contains simple examples of use that can be quickly copy-pasted.
-
-`modulo/` (Java) contains libraries that should be included as is.
-
 **Client ID** and **Client Secret** are authorization constants that could be obtained from [PigrecoOS](http://www.pigrecoos.it) services.
 
 **Access token**, used with the only get/set callback required by the Connector, must to be saved on a persistent storage, for example a file or a DB.

@@ -5,11 +5,11 @@ rm -rf out/bin/*
 mkdir -p out/bin
 
 echo Compile...
-javac -d out/bin -cp test/TestSOAP.java modulo/srl/soap/DynSOAPConnector.java modulo/srl/soap/DynSOAPClient.java modulo/srl/utils/DynXMLUtils.java test/TestSOAP.java
+javac -d out/bin modulo/srl/connector/DynConnector.java test/Test.java
 
 if [ "$?" -eq 0 ]; then
     echo Execute...
     cd out/bin
-    java TestSOAP
+    java Test
     cd ../../
 fi
